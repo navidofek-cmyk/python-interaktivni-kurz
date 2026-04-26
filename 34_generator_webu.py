@@ -371,6 +371,19 @@ def generuj_index(lekce: list[dict], vystup: Path) -> None:
     vystup.write_text(stranky, encoding="utf-8")
 
 
+def odstran_ulohy_z_kodu(kod: str) -> str:
+    """Vystřihne blok # TVOJE ÚLOHA: ... z kódu – zobrazí se jen v boxu."""
+    radky = kod.splitlines()
+    vysledek = []
+    preskakuj = False
+    for radek in radky:
+        stripped = radek.strip()
+        if stripped.startswith("# TVOJE ÚLOHA") or stripped.startswith("# ROZŠÍŘENÍ"):
+            preskakuj = True
+        if not preskakuj:
+            vysledek.append(radek)
+    return "\n".join(vysledek).rstrip()
+
 def generuj_lekci(l: dict, vystup: Path, prev_l=None, next_l=None) -> None:
     doc_html = html.escape(
         textwrap.dedent(l["docstring"]).strip()
@@ -380,6 +393,8 @@ def generuj_lekci(l: dict, vystup: Path, prev_l=None, next_l=None) -> None:
     if l["ulohy"]:
         items = "\n".join(f"<li>{html.escape(u)}</li>" for u in l["ulohy"])
         ulohy_html = f'<div class="ulohy"><h3>Tvoje úlohy</h3><ul>{items}</ul></div>'
+
+    kod_bez_uloh = odstran_ulohy_z_kodu(l["kod"])
 
     prev_html = (f'<a class="nav-btn" href="{prev_l["slug"]}.html">← {html.escape(prev_l["titul"])}</a>'
                  if prev_l else '<span></span>')
@@ -412,7 +427,7 @@ def generuj_lekci(l: dict, vystup: Path, prev_l=None, next_l=None) -> None:
     </div>
   </div>
   {'<div class="docstring">' + doc_html + '</div>' if doc_html else ''}
-  <pre class="kod"><code>{zvyrazni_python(l['kod'])}</code></pre>
+  <pre class="kod"><code>{zvyrazni_python(kod_bez_uloh)}</code></pre>
   {ulohy_html}
   <div class="page-nav">{prev_html}{next_html}</div>
 </main>
