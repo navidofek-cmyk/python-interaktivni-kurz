@@ -259,11 +259,25 @@ SEKCE = [
         "barva":  "#d2a8ff",
     },
     {
-        "rozsah": range(46, 52),
+        "rozsah": range(46, 53),
         "nazev":  "Nástroje a ekosystém",
         "ikona":  "🔧",
-        "popis":  "Regulární výrazy, funkcionální programování, logging, CLI s argparse",
+        "popis":  "Regex, funkcionální programování, logging, CLI, web scraping, Pydantic, kód kvalita",
         "barva":  "#3fb950",
+    },
+    {
+        "rozsah": range(53, 58),
+        "nazev":  "Datová věda a frameworky",
+        "ikona":  "📊",
+        "popis":  "NumPy, Pandas, Matplotlib, FastAPI – reálné použití Pythonu",
+        "barva":  "#ffa657",
+    },
+    {
+        "rozsah": range(57, 62),
+        "nazev":  "Pokročilé internals",
+        "ikona":  "🔬",
+        "popis":  "CPython bytekód, AST, garbage collector, introspekce",
+        "barva":  "#a5d6ff",
     },
 ]
 
