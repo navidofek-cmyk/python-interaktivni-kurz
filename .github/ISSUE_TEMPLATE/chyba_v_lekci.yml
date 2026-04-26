@@ -1,0 +1,42 @@
+name: Chyba v lekci
+description: Nahlás chybu nebo nepřesnost v lekci
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: lekce
+    attributes:
+      label: Číslo lekce
+      options:
+        - "01 – Ahoj světe"
+        - "02 – Proměnné"
+        - "03 – Vstup uživatele"
+        - "04 – Počítání"
+        - "05 – Podmínky"
+        - "06 – Cykly"
+        - "07 – Seznamy"
+        - "08 – Funkce"
+        - "09 – Projekt: Kvíz"
+        - "10 – Projekt: Had"
+        - "Jiná"
+    validations:
+      required: true
+
+  - type: textarea
+    id: popis
+    attributes:
+      label: Co je špatně?
+      placeholder: "Popis chyby, nepřesnosti nebo nejasnosti..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: ocekavane
+    attributes:
+      label: Co jsi očekával/a?
+      placeholder: "Správné chování nebo výstup..."
+
+  - type: input
+    id: python
+    attributes:
+      label: Verze Pythonu
+      placeholder: "python3 --version"

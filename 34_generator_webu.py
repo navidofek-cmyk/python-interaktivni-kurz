@@ -258,6 +258,13 @@ SEKCE = [
         "popis":  "Testování, SQLite, REST API, design patterns, concurrency, výkon, packaging",
         "barva":  "#d2a8ff",
     },
+    {
+        "rozsah": range(46, 52),
+        "nazev":  "Nástroje a ekosystém",
+        "ikona":  "🔧",
+        "popis":  "Regulární výrazy, funkcionální programování, logging, CLI s argparse",
+        "barva":  "#3fb950",
+    },
 ]
 
 def sekce_pro(cislo: int) -> str:
