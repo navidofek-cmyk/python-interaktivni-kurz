@@ -275,7 +275,8 @@ def sekce_pro(cislo: int) -> str:
 
 
 def zvyrazni_python(kod: str) -> str:
-    """Minimální syntax highlighting přes regex → HTML span."""
+    """Syntax highlighting – každý regex přeskakuje již otagované části."""
+
     KEYWORDS = r"\b(def|class|return|import|from|if|elif|else|for|while|" \
                r"try|except|finally|with|as|pass|break|continue|yield|" \
                r"lambda|and|or|not|in|is|True|False|None|async|await|" \
@@ -285,29 +286,54 @@ def zvyrazni_python(kod: str) -> str:
                r"classmethod|enumerate|zip|map|filter|sorted|reversed|" \
                r"min|max|sum|abs|round|hasattr|getattr|setattr|vars)\b"
 
+    # html.escape: & → &amp;  < → &lt;  > → &gt;  " → &quot;
+    # Tedy: """  →  &quot;&quot;&quot;   a  '''  →  &#x27;&#x27;&#x27;
     escp = html.escape(kod)
 
-    # Komentáře (musí být první – mohou obsahovat cokoli)
-    escp = re.sub(r"(#[^\n]*)", r'<span class="cm">\1</span>', escp)
-    # Stringy (hrubé – nezachytí víceřádkové, ale pro demo stačí)
-    escp = re.sub(r'(&#34;&#34;&#34;.*?&#34;&#34;&#34;)',
-                  r'<span class="st">\1</span>', escp, flags=re.DOTALL)
-    escp = re.sub(r"(&#39;&#39;&#39;.*?&#39;&#39;&#39;)",
-                  r'<span class="st">\1</span>', escp, flags=re.DOTALL)
-    escp = re.sub(r'(&#34;[^&#34;\n]*&#34;)',
-                  r'<span class="st">\1</span>', escp)
-    escp = re.sub(r"(&#39;[^&#39;\n]*&#39;)",
-                  r'<span class="st">\1</span>', escp)
-    # Čísla
-    escp = re.sub(r"\b(\d[\d_]*\.?\d*(?:[eE][+-]?\d+)?)\b",
-                  r'<span class="nm">\1</span>', escp)
-    # Builtins (před keywords – jinak by je keywords přepsal)
-    escp = re.sub(BUILTINS, r'<span class="nb">\1</span>', escp)
-    # Keywords
-    escp = re.sub(KEYWORDS, r'<span class="kw">\1</span>', escp)
-    # def/class jméno
-    escp = re.sub(r'<span class="kw">(def|class)</span>\s+(\w+)',
-                  r'<span class="kw">\1</span> <span class="fn">\2</span>', escp)
+    def sub_mimo_spany(vzor: str, nahrada: str, text: str, flags: int = 0) -> str:
+        """Aplikuje re.sub jen na části textu které nejsou uvnitř <span>."""
+        segmenty = re.split(r'(<span[^>]*>.*?</span>)', text, flags=re.DOTALL)
+        vysledek = []
+        for i, seg in enumerate(segmenty):
+            if i % 2 == 0:  # sudé indexy = text mimo spany
+                vysledek.append(re.sub(vzor, nahrada, seg, flags=flags))
+            else:           # liché indexy = hotový span, beze změny
+                vysledek.append(seg)
+        return "".join(vysledek)
+
+    # 1. Komentáře (první – mohou obsahovat cokoli)
+    escp = sub_mimo_spany(r"(#[^\n]*)", r'<span class="cm">\1</span>', escp)
+
+    # 2. Trojité uvozovky (docstringy)
+    Q3 = r'(&quot;&quot;&quot;.*?&quot;&quot;&quot;)'
+    A3 = r"(&#x27;&#x27;&#x27;.*?&#x27;&#x27;&#x27;)"
+    escp = sub_mimo_spany(Q3, r'<span class="st">\1</span>', escp, re.DOTALL)
+    escp = sub_mimo_spany(A3, r'<span class="st">\1</span>', escp, re.DOTALL)
+
+    # 3. Jednořádkové řetězce
+    Q1 = r'(&quot;[^&\n]*(?:&[^;\n]*;[^&\n]*)*&quot;)'
+    A1 = r"(&#x27;[^&#\n]*(?:&#[^;\n]*;[^&#\n]*)*&#x27;)"
+    escp = sub_mimo_spany(Q1, r'<span class="st">\1</span>', escp)
+    escp = sub_mimo_spany(A1, r'<span class="st">\1</span>', escp)
+
+    # 4. Čísla
+    escp = sub_mimo_spany(
+        r"\b(\d[\d_]*\.?\d*(?:[eE][+-]?\d+)?)\b",
+        r'<span class="nm">\1</span>', escp
+    )
+
+    # 5. Builtins
+    escp = sub_mimo_spany(BUILTINS, r'<span class="nb">\1</span>', escp)
+
+    # 6. Keywords
+    escp = sub_mimo_spany(KEYWORDS, r'<span class="kw">\1</span>', escp)
+
+    # 7. def/class jméno (jen bezprostředně za kw spanem)
+    escp = re.sub(
+        r'(<span class="kw">(?:def|class)</span>)\s+(\w+)',
+        r'\1 <span class="fn">\2</span>', escp
+    )
+
     return escp
 
 
