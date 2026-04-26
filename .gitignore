@@ -1,0 +1,18 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+
+# Generované soubory lekcí (ne součástí kurzu)
+poznamky.txt
+denik.txt
+
+# Instalovaný demo balíček
+balicek_demo/
+
+# Web generuje se příkazem python3 34_generator_webu.py
+web/
