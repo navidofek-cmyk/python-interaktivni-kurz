@@ -38,7 +38,7 @@ matplotlib>=3.8
 # ── Lekce 56: FastAPI ────────────────────────────────────────
 fastapi>=0.104
 uvicorn>=0.24
-httpx>=0.25          # pro TestClient
+httpx>=0.28.1          # pro TestClient
 
 # ── Lekce 58: SQLAlchemy ─────────────────────────────────────
 sqlalchemy>=2.0
