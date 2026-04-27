@@ -312,7 +312,7 @@ SEKCE = [
         "rozsah": range(72, 80),
         "nazev":  "Novinky a AI",
         "ikona":  "✨",
-        "popis":  "Python 3.13, uv/Poetry, LLM API – Claude a OpenAI z Pythonu",
+        "popis":  "Python 3.13, uv/Poetry, LLM API, CI/CD pipeline s Claude",
         "barva":  "#d2a8ff",
     },
 ]
