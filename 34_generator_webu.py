@@ -276,7 +276,7 @@ SEKCE = [
         "rozsah": range(57, 62),
         "nazev":  "Pokročilé internals",
         "ikona":  "🔬",
-        "popis":  "CPython bytekód, AST, garbage collector, introspekce",
+        "popis":  "CPython bytekód, AST, garbage collector, SQLAlchemy ORM, Celery, Docker, C extensions",
         "barva":  "#a5d6ff",
     },
 ]
