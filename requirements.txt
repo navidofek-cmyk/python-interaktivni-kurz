@@ -30,7 +30,7 @@ pre-commit>=3.0
 numpy>=1.26
 
 # ── Lekce 54: Pandas ─────────────────────────────────────────
-pandas>=2.1
+pandas>=3.0.2
 
 # ── Lekce 55: Matplotlib ─────────────────────────────────────
 matplotlib>=3.8
