@@ -315,6 +315,13 @@ SEKCE = [
         "popis":  "Python 3.13, uv/Poetry, LLM API, CI/CD pipeline s Claude",
         "barva":  "#d2a8ff",
     },
+    {
+        "rozsah": range(76, 85),
+        "nazev":  "Praktické nástroje",
+        "ikona":  "🛠️",
+        "popis":  "Playwright, PDF/Excel, email, Pygame – věci které se opravdu hodí",
+        "barva":  "#58a6ff",
+    },
 ]
 
 def sekce_pro(cislo: int) -> str:
