@@ -16,3 +16,4 @@ balicek_demo/
 
 # Web generuje se příkazem python3 34_generator_webu.py
 web/
+.*.swp
