@@ -279,6 +279,13 @@ SEKCE = [
         "popis":  "CPython bytekód, AST, garbage collector, SQLAlchemy ORM, Celery, Docker, C extensions",
         "barva":  "#a5d6ff",
     },
+    {
+        "rozsah": range(62, 70),
+        "nazev":  "Distribuované systémy",
+        "ikona":  "🌐",
+        "popis":  "WebSockets, Redis, GraphQL, Kafka – real-time a škálovatelné architektury",
+        "barva":  "#d29922",
+    },
 ]
 
 def sekce_pro(cislo: int) -> str:
