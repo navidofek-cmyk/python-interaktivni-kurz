@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/navidofek-cmyk/python-interaktivni-kurz/actions/workflows/ci.yml/badge.svg)](https://github.com/navidofek-cmyk/python-interaktivni-kurz/actions/workflows/ci.yml)
 [![Pages](https://github.com/navidofek-cmyk/python-interaktivni-kurz/actions/workflows/pages.yml/badge.svg)](https://navidofek-cmyk.github.io/python-interaktivni-kurz/)
-![Lekce](https://img.shields.io/badge/lekc%C3%AD-83-blue)
+![Lekce](https://img.shields.io/badge/lekc%C3%AD-90-blue)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue?logo=python&logoColor=white)
 ![Licence](https://img.shields.io/badge/licence-MIT-green)
 

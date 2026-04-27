@@ -316,11 +316,18 @@ SEKCE = [
         "barva":  "#d2a8ff",
     },
     {
-        "rozsah": range(76, 85),
+        "rozsah": range(76, 84),
         "nazev":  "Praktické nástroje",
         "ikona":  "🛠️",
         "popis":  "Playwright, PDF/Excel, email, Pygame, OpenCV, NLP, sokety, AWS boto3",
         "barva":  "#58a6ff",
+    },
+    {
+        "rozsah": range(84, 95),
+        "nazev":  "Ekosystém a specializace",
+        "ikona":  "🌟",
+        "popis":  "Rich TUI, Audio, tkinter GUI, Hypothesis, PyTorch, Jinja2, OpenTelemetry",
+        "barva":  "#d29922",
     },
 ]
 
