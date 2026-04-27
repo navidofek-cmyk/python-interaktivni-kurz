@@ -1,5 +1,11 @@
 # 🐍 Python – Interaktivní kurz
 
+[![CI](https://github.com/navidofek-cmyk/python-interaktivni-kurz/actions/workflows/ci.yml/badge.svg)](https://github.com/navidofek-cmyk/python-interaktivni-kurz/actions/workflows/ci.yml)
+[![Pages](https://github.com/navidofek-cmyk/python-interaktivni-kurz/actions/workflows/pages.yml/badge.svg)](https://navidofek-cmyk.github.io/python-interaktivni-kurz/)
+![Lekce](https://img.shields.io/badge/lekc%C3%AD-71-blue)
+![Python](https://img.shields.io/badge/python-3.11%2B-blue?logo=python&logoColor=white)
+![Licence](https://img.shields.io/badge/licence-MIT-green)
+
 Kurz Pythonu od úplných základů po pokročilá témata.
 Každá lekce je jeden `.py` soubor – spustíš ho, přečteš, vyzkouší a splníš úlohy na konci.
 

@@ -1,0 +1,80 @@
+# Python – Interaktivní kurz · Volitelné závislosti
+#
+# Základní lekce (01–34) nevyžadují nic navíc.
+# Níže jsou balíčky potřebné pro konkrétní lekce.
+#
+# Instalace všeho najednou:
+#   pip install -r requirements.txt
+#
+# Nebo jen to co potřebuješ:
+#   pip install fastapi uvicorn
+
+# ── Lekce 14, 16 ─────────────────────────────────────────────
+# python3-tk  ← systémový balíček (ne pip)
+# Linux:   sudo apt install python3-tk
+# Mac:     brew install python-tk
+# Windows: součást instalátoru Pythonu
+
+# ── Lekce 51: Pydantic ───────────────────────────────────────
+pydantic>=2.5
+pydantic-settings>=2.1
+python-dotenv>=1.0
+
+# ── Lekce 52: Kód kvalita ────────────────────────────────────
+black>=23.0
+ruff>=0.1
+mypy>=1.5
+pre-commit>=3.0
+
+# ── Lekce 53: NumPy ──────────────────────────────────────────
+numpy>=1.26
+
+# ── Lekce 54: Pandas ─────────────────────────────────────────
+pandas>=2.1
+
+# ── Lekce 55: Matplotlib ─────────────────────────────────────
+matplotlib>=3.8
+
+# ── Lekce 56: FastAPI ────────────────────────────────────────
+fastapi>=0.104
+uvicorn>=0.24
+httpx>=0.25          # pro TestClient
+
+# ── Lekce 58: SQLAlchemy ─────────────────────────────────────
+sqlalchemy>=2.0
+
+# ── Lekce 59: Celery ─────────────────────────────────────────
+# celery>=5.3
+# redis>=5.0           # broker
+
+# ── Lekce 62: WebSockets ─────────────────────────────────────
+websockets>=12.0
+
+# ── Lekce 63: Redis ──────────────────────────────────────────
+# redis>=5.0           # vyžaduje běžící Redis server
+
+# ── Lekce 64: GraphQL ────────────────────────────────────────
+# strawberry-graphql>=0.215
+
+# ── Lekce 65: Kafka ──────────────────────────────────────────
+# kafka-python>=2.0    # vyžaduje běžící Kafka broker
+
+# ── Lekce 66: gRPC ───────────────────────────────────────────
+# grpcio>=1.59
+# grpcio-tools>=1.59
+
+# ── Lekce 68: Security ───────────────────────────────────────
+cryptography>=41.0
+
+# ── Lekce 69: Kubernetes ─────────────────────────────────────
+pyyaml>=6.0
+# kubernetes>=28.0     # vyžaduje běžící K8s cluster
+
+# ── Lekce 70: MLOps ──────────────────────────────────────────
+scikit-learn>=1.3
+joblib>=1.3
+scipy>=1.11
+
+# ── Testování (lekce 39) ─────────────────────────────────────
+pytest>=7.4
+pytest-cov>=4.1
