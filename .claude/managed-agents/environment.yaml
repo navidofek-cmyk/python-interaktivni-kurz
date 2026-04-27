@@ -1,0 +1,15 @@
+# Environment pro Python kurz agenty
+# ant beta:environments create < .claude/managed-agents/environment.yaml
+
+name: python-kurz-env
+description: Python 3.12 prostředí pro vývoj Python kurzu
+
+config:
+  type: cloud
+  networking:
+    type: package_managers_and_custom
+    allowed_hosts:
+      - github.com
+      - pypi.org
+      - files.pythonhosted.org
+      - api.github.com

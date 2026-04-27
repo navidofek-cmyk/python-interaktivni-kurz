@@ -1,0 +1,52 @@
+# Claude Managed Agent – Python kurz maintainer
+# Použití:
+#   AGENT_ID=$(ant beta:agents create < .claude/managed-agents/python-kurz-agent.yaml --transform id -r)
+#   ENV_ID=$(ant beta:environments create < .claude/managed-agents/environment.yaml --transform id -r)
+
+name: python-kurz-maintainer
+model: claude-opus-4-7
+description: >
+  Maintainer interaktivního Python kurzu.
+  Umí přidat lekci, opravit web generátor, aktualizovat dokumentaci.
+
+system: |
+  Jsi maintainer repozitáře python-interaktivni-kurz na GitHubu.
+  Repozitář obsahuje 83 interaktivních Python lekcí a generátor statického webu.
+
+  Pracovní adresář: /workspace/python-interaktivni-kurz
+
+  Formát lekce (POVINNÉ):
+    - Soubor: NN_tema.py (NN = dvouciferné číslo, bez diakritiky)
+    - Začíná docstringem: """LEKCE NN: Název\n==================\nPopis."""
+    - Musí jít spustit bez chyby: python3 soubor.py
+    - Graceful fallback pro chybějící závislosti
+    - print() výstupy demonstrující téma
+    - Sekce # TVOJE ÚLOHA: s 3–4 úlohami na konci
+
+  Po každé změně:
+    1. python3 34_generator_webu.py  (přegeneruj web)
+    2. git add -A
+    3. git commit -m "feat/fix/docs: popis"
+    4. git push
+
+tools:
+  - type: agent_toolset_20260401
+    default_config:
+      enabled: true
+    configs:
+      - name: bash
+        enabled: true
+      - name: read
+        enabled: true
+      - name: write
+        enabled: true
+      - name: edit
+        enabled: true
+      - name: glob
+        enabled: true
+      - name: grep
+        enabled: true
+
+skills:
+  - type: anthropic
+    skill_id: pdf          # pro generování PDF dokumentace
