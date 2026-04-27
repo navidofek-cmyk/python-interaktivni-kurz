@@ -3,387 +3,474 @@ LEKCE 74: LLM API – Claude a OpenAI z Pythonu
 ================================================
 pip install anthropic openai
 
-Volání velkých jazykových modelů (LLM) z Pythonu.
-Claude (Anthropic) a GPT (OpenAI) mají podobné API.
+Volání velkých jazykových modelů z Pythonu.
 
-Koncepty:
-  Completion  – model dokončí text / odpoví na otázku
-  Chat        – konverzace s historií zpráv
-  Streaming   – odpověď přichází postupně (token po tokenu)
-  Tool use    – model může volat funkce (Function Calling)
-  Vision      – model vidí obrázky
-  Embeddings  – převod textu na číselný vektor
+CLAUDE (Anthropic)          OPENAI
+──────────────────          ──────
+claude-opus-4-7   ←→        gpt-4o
+claude-sonnet-4-6 ←→        gpt-4o-mini
+claude-haiku-4-5  ←→        gpt-4o-mini (rychlý)
 
-Tato lekce:
-  - Ukazuje jak API volat (s i bez klíče)
-  - Implementuje vzory: retry, cache, rate limit, structured output
-  - Simuluje odpovědi pokud klíč není dostupný
+Kdy co:
+  Claude  → delší kontext (1M tokenů), lepší instrukce, tool use
+  OpenAI  → velký ekosystém, fine-tuning, embeddings, DALL-E
+
+Oba mají:
+  Completion   – jednorázová odpověď
+  Chat         – konverzace s historií
+  Streaming    – odpověď token po tokenu
+  Tool use     – model volá tvoje funkce
+  Vision       – model vidí obrázky
+  JSON output  – strukturovaná odpověď
 """
 
-import os
-import time
-import json
-import hashlib
-import re
-from pathlib import Path
-from functools import lru_cache
-from dataclasses import dataclass
+import os, json, time
 from typing import Iterator
 
-# ══════════════════════════════════════════════════════════════
-# ČÁST 1: Základní volání API
-# ══════════════════════════════════════════════════════════════
-
-print("=== LLM API – Claude (Anthropic) ===\n")
+# ── Instalace ─────────────────────────────────────────────────
+# pip install anthropic openai
 
 ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 OPENAI_KEY    = os.getenv("OPENAI_API_KEY", "")
 
-# ── Simulátor pro demo bez API klíče ─────────────────────────
-class LLMSimulator:
-    """Simuluje LLM odpovědi pro demo bez API klíče."""
-    ODPOVEDI = {
-        "haiku": "Kód šumí tiše,\nPython tančí s daty,\nsvět se točí dál.",
-        "default": "Jsem simulovaná odpověď LLM. Pro reálné volání nastav ANTHROPIC_API_KEY.",
-    }
-
-    def zprava(self, obsah: str, **kwargs) -> str:
-        if "haiku" in obsah.lower() or "báseň" in obsah.lower():
-            time.sleep(0.1)
-            return self.ODPOVEDI["haiku"]
-        time.sleep(0.2)
-        return f"[Simulace] Odpověď na: {obsah[:50]}..."
-
-    def stream(self, obsah: str, **kwargs) -> Iterator[str]:
-        odpoved = self.zprava(obsah)
-        for slovo in odpoved.split():
-            yield slovo + " "
-            time.sleep(0.02)
-
-
-def vytvor_klienta():
-    """Vytvoří reálný nebo simulovaný LLM klient."""
-    if ANTHROPIC_KEY:
-        try:
-            import anthropic
-            klient = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
-            print("  ✓ Anthropic klient inicializován")
-            return "anthropic", klient
-        except ImportError:
-            print("  pip install anthropic")
-
-    if OPENAI_KEY:
-        try:
-            import openai
-            klient = openai.OpenAI(api_key=OPENAI_KEY)
-            print("  ✓ OpenAI klient inicializován")
-            return "openai", klient
-        except ImportError:
-            print("  pip install openai")
-
-    print("  ℹ Žádný API klíč nenalezen – používám simulátor")
-    print("  Nastav ANTHROPIC_API_KEY nebo OPENAI_API_KEY pro reálná volání\n")
-    return "sim", LLMSimulator()
-
-typ, klient = vytvor_klienta()
-
-
-def chat(zprava: str, system: str = "", model: str = None) -> str:
-    """Jednotné rozhraní pro Claude i OpenAI."""
-    if typ == "anthropic":
-        kwargs = {
-            "model": model or "claude-opus-4-5",
-            "max_tokens": 1024,
-            "messages": [{"role": "user", "content": zprava}],
-        }
-        if system:
-            kwargs["system"] = system
-        resp = klient.messages.create(**kwargs)
-        return resp.content[0].text
-
-    elif typ == "openai":
-        zpravy = []
-        if system:
-            zpravy.append({"role": "system", "content": system})
-        zpravy.append({"role": "user", "content": zprava})
-        resp = klient.chat.completions.create(
-            model=model or "gpt-4o-mini",
-            messages=zpravy,
-            max_tokens=1024,
-        )
-        return resp.choices[0].message.content
-
-    else:
-        return klient.zprava(zprava, system=system)
-
-
-# Základní volání
-print("Základní dotaz:")
-odpoved = chat("Napiš haiku o Pythonu.")
-print(f"  {odpoved}\n")
-
-
 # ══════════════════════════════════════════════════════════════
-# ČÁST 2: Konverzace s historií
+# ČÁST 1: CLAUDE – Anthropic SDK
 # ══════════════════════════════════════════════════════════════
 
-print("=== Konverzace s historií ===\n")
+print("=" * 55)
+print("CLAUDE – Anthropic SDK")
+print("=" * 55)
 
-@dataclass
-class Zprava:
-    role:    str   # "user" nebo "assistant"
-    obsah:   str
-
-class Konverzace:
-    def __init__(self, system: str = ""):
-        self.system  = system
-        self.historie: list[Zprava] = []
-
-    def posli(self, zprava: str) -> str:
-        self.historie.append(Zprava("user", zprava))
-
-        if typ == "anthropic":
-            resp = klient.messages.create(
-                model="claude-opus-4-5",
-                max_tokens=1024,
-                system=self.system,
-                messages=[{"role": z.role, "content": z.obsah}
-                           for z in self.historie],
-            ) if ANTHROPIC_KEY else None
-            odpoved = resp.content[0].text if resp else klient.zprava(zprava)
-        elif typ == "openai":
-            zpravy = ([{"role": "system", "content": self.system}]
-                       if self.system else [])
-            zpravy += [{"role": z.role, "content": z.obsah}
-                        for z in self.historie]
-            resp = klient.chat.completions.create(
-                model="gpt-4o-mini", messages=zpravy, max_tokens=1024
-            )
-            odpoved = resp.choices[0].message.content
-        else:
-            odpoved = klient.zprava(zprava)
-
-        self.historie.append(Zprava("assistant", odpoved))
-        return odpoved
-
-    def tiskni_historii(self):
-        for z in self.historie:
-            ikona = "👤" if z.role == "user" else "🤖"
-            print(f"  {ikona} {z.obsah[:80]}")
-
-konv = Konverzace(system="Jsi přátelský Python lektor. Odpovídej stručně česky.")
-otazky = [
-    "Co je dekorátor v Pythonu?",
-    "Dej mi jednoduchý příklad.",
-]
-for otazka in otazky:
-    odpoved = konv.posli(otazka)
-    print(f"  Otázka: {otazka}")
-    print(f"  Odpověď: {odpoved[:100]}...\n")
-
-
-# ══════════════════════════════════════════════════════════════
-# ČÁST 3: Structured output – JSON odpovědi
-# ══════════════════════════════════════════════════════════════
-
-print("=== Structured Output – JSON ===\n")
-
-def extrahuj_json(text: str) -> dict:
-    """Vytáhni JSON z odpovědi modelu."""
-    m = re.search(r"\{.*\}", text, re.DOTALL)
-    if m:
-        try:
-            return json.loads(m.group())
-        except json.JSONDecodeError:
-            pass
-    return {}
-
-SCHEMA_PROMPT = """\
-Analyzuj tento Python kód a vrať JSON s těmito klíči:
-- "funkce": seznam názvů funkcí
-- "tridy": seznam názvů tříd
-- "importy": seznam importovaných modulů
-- "slozitost": "nízká" / "střední" / "vysoká"
-
-Kód:
-{kod}
-
-Vrať POUZE validní JSON, nic jiného."""
-
-ukazka_kodu = """\
-import asyncio
-from dataclasses import dataclass
-
-@dataclass
-class Student:
-    jmeno: str
-    body: float
-
-async def nacti_studenty(db_url: str) -> list[Student]:
-    await asyncio.sleep(0.1)
-    return [Student("Míša", 87.5)]
-
-def vypocti_prumer(studenti: list[Student]) -> float:
-    return sum(s.body for s in studenti) / len(studenti)
-"""
-
-prompt = SCHEMA_PROMPT.format(kod=ukazka_kodu)
-if typ == "sim":
-    # Simulovaná odpověď
-    analyza = {
-        "funkce": ["nacti_studenty", "vypocti_prumer"],
-        "tridy": ["Student"],
-        "importy": ["asyncio", "dataclasses"],
-        "slozitost": "nízká",
-    }
+if not ANTHROPIC_KEY:
+    print("\nℹ  ANTHROPIC_API_KEY není nastaven.")
+    print("   export ANTHROPIC_API_KEY='sk-ant-...'")
+    print("   Lekce zobrazuje kód – nastav klíč a spusť znovu.\n")
 else:
-    odpoved = chat(prompt)
-    analyza = extrahuj_json(odpoved)
+    import anthropic
+    claude = anthropic.Anthropic()   # klíč z ANTHROPIC_API_KEY
 
-print(f"  Analýza kódu: {json.dumps(analyza, ensure_ascii=False, indent=2)}")
+    # ── 1a. Základní volání ───────────────────────────────────
+    print("\n--- Základní volání ---")
+
+    zprava = claude.messages.create(
+        model="claude-opus-4-7",          # vždy nejnovější Opus
+        max_tokens=256,
+        messages=[{
+            "role": "user",
+            "content": "Napiš haiku o Pythonu. Jen haiku, nic jiného.",
+        }],
+    )
+    print(zprava.content[0].text)
+    print(f"  [tokeny: in={zprava.usage.input_tokens} out={zprava.usage.output_tokens}]")
+
+    # ── 1b. System prompt + konverzace ───────────────────────
+    print("\n--- System prompt ---")
+
+    odpoved = claude.messages.create(
+        model="claude-opus-4-7",
+        max_tokens=512,
+        system="Jsi přátelský Python lektor. Odpovídej stručně česky.",
+        messages=[
+            {"role": "user",      "content": "Co je dekorátor?"},
+            {"role": "assistant", "content": "Dekorátor je funkce, která obalí jinou funkci a přidá jí chování."},
+            {"role": "user",      "content": "Dej mi příklad."},
+        ],
+    )
+    print(odpoved.content[0].text[:200])
+
+    # ── 1c. Streaming ─────────────────────────────────────────
+    print("\n--- Streaming ---")
+    print("Odpověď: ", end="", flush=True)
+
+    with claude.messages.stream(
+        model="claude-opus-4-7",
+        max_tokens=128,
+        messages=[{"role": "user", "content": "Tři věci které musíš vědět o Pythonu. Krátce."}],
+    ) as stream:
+        for text in stream.text_stream:
+            print(text, end="", flush=True)
+
+    final = stream.get_final_message()
+    print(f"\n  [tokeny: {final.usage.output_tokens}]")
+
+    # ── 1d. Tool use (function calling) ──────────────────────
+    print("\n--- Tool use ---")
+
+    NASTROJE_CLAUDE = [
+        {
+            "name": "vypocti",
+            "description": "Vypočítá matematický výraz",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "vyraz": {"type": "string", "description": "Python výraz, např. '2**10'"},
+                },
+                "required": ["vyraz"],
+            },
+        },
+        {
+            "name": "pocasi",
+            "description": "Vrátí počasí pro město",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "mesto": {"type": "string"},
+                },
+                "required": ["mesto"],
+            },
+        },
+    ]
+
+    def spust_nastroj(jmeno: str, vstup: dict) -> str:
+        if jmeno == "vypocti":
+            try:
+                return str(eval(vstup["vyraz"]))   # jen pro demo!
+            except Exception as e:
+                return f"Chyba: {e}"
+        if jmeno == "pocasi":
+            return f"V {vstup['mesto']}: 22 °C, slunečno"
+        return "Neznámý nástroj"
+
+    zpravy = [{"role": "user", "content": "Kolik je 2 na 10 a jaké je počasí v Praze?"}]
+
+    while True:
+        odpoved = claude.messages.create(
+            model="claude-opus-4-7",
+            max_tokens=512,
+            tools=NASTROJE_CLAUDE,
+            messages=zpravy,
+        )
+
+        if odpoved.stop_reason == "end_turn":
+            for blok in odpoved.content:
+                if blok.type == "text":
+                    print(f"  Claude: {blok.text}")
+            break
+
+        # Zpracuj tool_use bloky
+        zpravy.append({"role": "assistant", "content": odpoved.content})
+        vysledky = []
+        for blok in odpoved.content:
+            if blok.type == "tool_use":
+                vysledek = spust_nastroj(blok.name, blok.input)
+                print(f"  nástroj {blok.name}({blok.input}) → {vysledek}")
+                vysledky.append({
+                    "type": "tool_result",
+                    "tool_use_id": blok.id,
+                    "content": vysledek,
+                })
+        zpravy.append({"role": "user", "content": vysledky})
+
+    # ── 1e. Structured output (JSON schema) ───────────────────
+    print("\n--- Structured output ---")
+
+    from pydantic import BaseModel
+
+    class Analyza(BaseModel):
+        jazyk: str
+        obtiznost: str          # "snadné" / "střední" / "těžké"
+        klicova_temata: list[str]
+        doporucene_lekce: list[int]
+
+    odpoved = claude.messages.parse(
+        model="claude-opus-4-7",
+        max_tokens=512,
+        messages=[{
+            "role": "user",
+            "content": "Analyzuj toto téma: asyncio, Futures, Task, event loop",
+        }],
+        output_format=Analyza,
+    )
+    analyza: Analyza = odpoved.parsed_output
+    print(f"  Jazyk: {analyza.jazyk}")
+    print(f"  Obtížnost: {analyza.obtiznost}")
+    print(f"  Témata: {analyza.klicova_temata}")
+
+    # ── 1f. Prompt caching ────────────────────────────────────
+    print("\n--- Prompt caching (velký kontext) ---")
+
+    VELKY_KONTEXT = "Obsah Pythonské dokumentace... " * 500   # ~10 000 tokenů
+
+    def dotaz_s_cache(otazka: str) -> tuple[str, bool]:
+        resp = claude.messages.create(
+            model="claude-opus-4-7",
+            max_tokens=256,
+            system=[{
+                "type": "text",
+                "text": VELKY_KONTEXT,
+                "cache_control": {"type": "ephemeral"},  # cachuj toto
+            }],
+            messages=[{"role": "user", "content": otazka}],
+        )
+        z_cache = resp.usage.cache_read_input_tokens > 0
+        return resp.content[0].text, z_cache
+
+    t1 = time.perf_counter()
+    _, hit1 = dotaz_s_cache("Co je Python?")
+    t2 = time.perf_counter()
+    _, hit2 = dotaz_s_cache("Co je asyncio?")
+    t3 = time.perf_counter()
+
+    print(f"  Dotaz 1: {(t2-t1)*1000:.0f}ms  cache={'HIT' if hit1 else 'MISS (zapsáno)'}")
+    print(f"  Dotaz 2: {(t3-t2)*1000:.0f}ms  cache={'HIT' if hit2 else 'MISS'}")
+    print(f"  Druhý dotaz byl {'rychlejší ✓' if t3-t2 < t2-t1 else 'podobně rychlý'}")
+
+    # ── 1g. Error handling ────────────────────────────────────
+    print("\n--- Error handling ---")
+
+    try:
+        claude.messages.create(
+            model="claude-neexistujici-model",
+            max_tokens=10,
+            messages=[{"role": "user", "content": "Ahoj"}],
+        )
+    except anthropic.NotFoundError as e:
+        print(f"  NotFoundError: {e.message[:60]}")
+    except anthropic.AuthenticationError:
+        print("  AuthenticationError: neplatný API klíč")
+    except anthropic.RateLimitError as e:
+        retry = e.response.headers.get("retry-after", "?")
+        print(f"  RateLimitError: retry after {retry}s")
+    except anthropic.APIStatusError as e:
+        print(f"  APIStatusError {e.status_code}: {e.message[:60]}")
 
 
 # ══════════════════════════════════════════════════════════════
-# ČÁST 4: Cache a retry
+# ČÁST 2: OPENAI SDK
 # ══════════════════════════════════════════════════════════════
 
-print("\n=== Cache a retry ===\n")
+print("\n" + "=" * 55)
+print("OPENAI SDK")
+print("=" * 55)
+
+if not OPENAI_KEY:
+    print("\nℹ  OPENAI_API_KEY není nastaven.")
+    print("   export OPENAI_API_KEY='sk-...'")
+    print("   Lekce zobrazuje kód – nastav klíč a spusť znovu.\n")
+else:
+    from openai import OpenAI
+    oai = OpenAI()   # klíč z OPENAI_API_KEY
+
+    # ── 2a. Základní volání ───────────────────────────────────
+    print("\n--- Základní volání ---")
+
+    zprava = oai.chat.completions.create(
+        model="gpt-4o-mini",
+        max_tokens=256,
+        messages=[{
+            "role": "user",
+            "content": "Napiš haiku o Pythonu. Jen haiku, nic jiného.",
+        }],
+    )
+    print(zprava.choices[0].message.content)
+    print(f"  [tokeny: in={zprava.usage.prompt_tokens} out={zprava.usage.completion_tokens}]")
+
+    # ── 2b. System prompt + konverzace ───────────────────────
+    print("\n--- System prompt ---")
+
+    odpoved = oai.chat.completions.create(
+        model="gpt-4o-mini",
+        max_tokens=512,
+        messages=[
+            {"role": "system",    "content": "Jsi přátelský Python lektor. Odpovídej stručně česky."},
+            {"role": "user",      "content": "Co je dekorátor?"},
+            {"role": "assistant", "content": "Dekorátor je funkce, která obalí jinou funkci a přidá jí chování."},
+            {"role": "user",      "content": "Dej mi příklad."},
+        ],
+    )
+    print(odpoved.choices[0].message.content[:200])
+
+    # ── 2c. Streaming ─────────────────────────────────────────
+    print("\n--- Streaming ---")
+    print("Odpověď: ", end="", flush=True)
+
+    stream = oai.chat.completions.create(
+        model="gpt-4o-mini",
+        max_tokens=128,
+        stream=True,
+        messages=[{"role": "user", "content": "Tři věci které musíš vědět o Pythonu. Krátce."}],
+    )
+    for chunk in stream:
+        delta = chunk.choices[0].delta.content or ""
+        print(delta, end="", flush=True)
+    print()
+
+    # ── 2d. Tool use ──────────────────────────────────────────
+    print("\n--- Tool use ---")
+
+    NASTROJE_OAI = [
+        {
+            "type": "function",
+            "function": {
+                "name": "vypocti",
+                "description": "Vypočítá matematický výraz",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "vyraz": {"type": "string"},
+                    },
+                    "required": ["vyraz"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "pocasi",
+                "description": "Vrátí počasí pro město",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "mesto": {"type": "string"},
+                    },
+                    "required": ["mesto"],
+                },
+            },
+        },
+    ]
+
+    zpravy_oai = [{"role": "user", "content": "Kolik je 2 na 10 a jaké je počasí v Praze?"}]
+
+    while True:
+        odpoved = oai.chat.completions.create(
+            model="gpt-4o-mini",
+            tools=NASTROJE_OAI,
+            messages=zpravy_oai,
+        )
+        zprava_asistenta = odpoved.choices[0].message
+        zpravy_oai.append(zprava_asistenta)
+
+        if not zprava_asistenta.tool_calls:
+            print(f"  GPT: {zprava_asistenta.content}")
+            break
+
+        for volani in zprava_asistenta.tool_calls:
+            vstup = json.loads(volani.function.arguments)
+            vysledek = spust_nastroj(volani.function.name, vstup)
+            print(f"  nástroj {volani.function.name}({vstup}) → {vysledek}")
+            zpravy_oai.append({
+                "role": "tool",
+                "tool_call_id": volani.id,
+                "content": vysledek,
+            })
+
+    # ── 2e. Structured output ─────────────────────────────────
+    print("\n--- Structured output (response_format) ---")
+
+    odpoved = oai.chat.completions.create(
+        model="gpt-4o-mini",
+        max_tokens=512,
+        response_format={"type": "json_object"},
+        messages=[{
+            "role": "system", "content": "Vrať JSON s klíči: jazyk, obtiznost, klicova_temata.",
+        }, {
+            "role": "user", "content": "Analyzuj: asyncio, Futures, Task, event loop",
+        }],
+    )
+    data = json.loads(odpoved.choices[0].message.content)
+    print(f"  {data}")
+
+    # ── 2f. Error handling ────────────────────────────────────
+    print("\n--- Error handling ---")
+    from openai import NotFoundError, RateLimitError, AuthenticationError
+
+    try:
+        oai.chat.completions.create(
+            model="gpt-neexistujici",
+            max_tokens=10,
+            messages=[{"role": "user", "content": "Ahoj"}],
+        )
+    except NotFoundError as e:
+        print(f"  NotFoundError: {str(e)[:60]}")
+    except AuthenticationError:
+        print("  AuthenticationError: neplatný API klíč")
+    except RateLimitError:
+        print("  RateLimitError: překročen limit")
+
+
+# ══════════════════════════════════════════════════════════════
+# ČÁST 3: SROVNÁNÍ A PRODUKČNÍ VZORY
+# ══════════════════════════════════════════════════════════════
+
+print("\n" + "=" * 55)
+print("PRODUKČNÍ VZORY")
+print("=" * 55)
+
+# ── Cache s file-backend ──────────────────────────────────────
+import hashlib
+from pathlib import Path
 
 CACHE_DIR = Path(".llm_cache")
 CACHE_DIR.mkdir(exist_ok=True)
 
-def klic_cache(zprava: str, system: str = "") -> str:
-    return hashlib.md5(f"{system}:{zprava}".encode()).hexdigest()
-
-def chat_s_cache(zprava: str, system: str = "", ttl_hod: int = 24) -> str:
-    """LLM volání s file-based cache."""
-    klic = klic_cache(zprava, system)
+def chat_s_cache(prompt: str, ttl_hod: int = 24) -> str | None:
+    """Klíčovaná file cache – šetří API kredity při vývoji."""
+    klic  = hashlib.md5(prompt.encode()).hexdigest()
     soubor = CACHE_DIR / f"{klic}.json"
-
     if soubor.exists():
         data = json.loads(soubor.read_text())
-        vek = time.time() - data["ts"]
-        if vek < ttl_hod * 3600:
-            print(f"  [cache HIT] {vek:.0f}s starý")
+        if time.time() - data["ts"] < ttl_hod * 3600:
             return data["odpoved"]
+    return None
 
-    print(f"  [cache MISS] volám API...")
-    odpoved = chat(zprava, system=system)
+def chat_uloz_cache(prompt: str, odpoved: str):
+    klic = hashlib.md5(prompt.encode()).hexdigest()
+    soubor = CACHE_DIR / f"{klic}.json"
     soubor.write_text(json.dumps({"ts": time.time(), "odpoved": odpoved}))
-    return odpoved
 
-def chat_s_retry(zprava: str, max_pokusy: int = 3) -> str:
-    """Retry s exponential backoff pro rate limits."""
+# ── Retry s exponential backoff ───────────────────────────────
+def api_s_retry(fn, max_pokusy: int = 3):
+    """Automatický retry pro rate limity a 5xx chyby."""
     for pokus in range(max_pokusy):
         try:
-            return chat(zprava)
+            return fn()
         except Exception as e:
-            if "rate_limit" in str(e).lower() and pokus < max_pokusy - 1:
+            zprava = str(e).lower()
+            je_retryable = "rate" in zprava or "429" in zprava or "500" in zprava
+            if je_retryable and pokus < max_pokusy - 1:
                 zpozdeni = 2 ** pokus
-                print(f"  Rate limit – čekám {zpozdeni}s...")
+                print(f"  Retry {pokus+1}/{max_pokusy} za {zpozdeni}s... ({type(e).__name__})")
                 time.sleep(zpozdeni)
             else:
                 raise
-    raise RuntimeError("Všechny pokusy selhaly")
-
-# Demo
-o1 = chat_s_cache("Co je Python?")
-o2 = chat_s_cache("Co je Python?")   # z cache
-print(f"  Odpověď: {o1[:60]}...")
 
 import shutil
 shutil.rmtree(CACHE_DIR, ignore_errors=True)
 
-
-# ══════════════════════════════════════════════════════════════
-# ČÁST 5: Tool Use (Function Calling)
-# ══════════════════════════════════════════════════════════════
-
-print("\n=== Tool Use (Function Calling) ===\n")
-print("  Model může volat tvoje Python funkce!\n")
-
-# Definice nástrojů
-def ziskej_pocasi(mesto: str) -> dict:
-    """Simuluje počasí API."""
-    return {"mesto": mesto, "teplota": 22, "popis": "slunečno"}
-
-def vypocti(vyrazu: str) -> float:
-    """Bezpečně vyhodnotí matematický výraz."""
-    povolene = set("0123456789+-*/()., ")
-    if all(c in povolene for c in vyrazu):
-        return eval(vyrazu)
-    raise ValueError("Nepovolen výraz")
-
-NASTROJE = {
-    "ziskej_pocasi": {
-        "popis": "Vrátí počasí pro zadané město",
-        "parametry": {"mesto": "string"},
-        "funkce": ziskej_pocasi,
-    },
-    "vypocti": {
-        "popis": "Vypočítá matematický výraz",
-        "parametry": {"vyrazu": "string"},
-        "funkce": vypocti,
-    },
-}
-
-def agent_s_nastroji(dotaz: str) -> str:
-    """Jednoduchý agent který může volat nástroje."""
-    # Prompt instrukuje model k volání nástrojů přes JSON
-    system = f"""Jsi asistent s přístupem k nástrojům.
-Pokud potřebuješ nástroj, odpověz JSON: {{"nastroj": "jmeno", "parametry": {{...}}}}
-Dostupné nástroje: {list(NASTROJE.keys())}"""
-
-    odpoved = chat(dotaz, system=system)
-
-    # Zkontroluj jestli model chce volat nástroj
-    data = extrahuj_json(odpoved)
-    if "nastroj" in data:
-        nastroj = NASTROJE.get(data["nastroj"])
-        if nastroj:
-            vysledek = nastroj["funkce"](**data.get("parametry", {}))
-            print(f"  [agent] Volám nástroj: {data['nastroj']}({data.get('parametry',{})})")
-            print(f"  [agent] Výsledek: {vysledek}")
-            # Zavolej model znovu s výsledkem nástroje
-            return chat(f"Výsledek nástroje: {vysledek}. Teď odpověz na: {dotaz}")
-
-    return odpoved
-
-print("  Dotaz: Jaké je počasí v Praze?")
-odpoved = agent_s_nastroji("Jaké je počasí v Praze?")
-print(f"  Odpověď: {odpoved[:100]}")
-
-
-# ══════════════════════════════════════════════════════════════
-# ČÁST 6: Přehled modelů a ceny
-# ══════════════════════════════════════════════════════════════
-
 print("""
-=== Modely a kdy co použít ===
+=== Srovnání Claude vs OpenAI ===
 
-  Claude (Anthropic):
-    claude-opus-4-5      → nejchytřejší, komplexní úkoly, dražší
-    claude-sonnet-4-5    → rovnováha výkon/cena, doporučený
-    claude-haiku-4-5     → rychlý a levný, jednoduché úkoly
+                      Claude          OpenAI
+  Max kontext         1M tokenů       128K (gpt-4o)
+  Tool use            ✓               ✓
+  Vision              ✓               ✓ (gpt-4o)
+  JSON output         ✓ output_config ✓ response_format
+  Streaming           ✓               ✓
+  Prompt caching      ✓ (vestavěné)   ✗ (jen přes API tier)
+  Embeddings          ✗               ✓ text-embedding-3
+  Fine-tuning         ✗               ✓
+  Image generation    ✗               ✓ DALL-E 3
+  Cena (input)        $5/1M (Opus 4.7)  $2.5/1M (gpt-4o)
 
-  GPT (OpenAI):
-    gpt-4o               → nejchytřejší, vize, dražší
-    gpt-4o-mini          → levný, rychlý, většina úkolů
-    o1-mini              → reasoning, matematika, kód
+=== Kdy co použít ===
 
-  Volně dostupné (self-hosted):
-    Llama 3.1 (Meta)     → via Ollama
-    Mistral              → via Ollama nebo API
-    Gemma 2 (Google)     → via Ollama
+  Claude:   delší dokumenty, složité instrukce, bezpečnost
+  OpenAI:   ekosystém, embeddings, generování obrázků
+  Oba:      prototypuj s gpt-4o-mini nebo haiku (levné)
+            produkce s opus/gpt-4o dle požadavků
 
-  Doporučení:
-    Prototyp/vývoj  → claude-haiku nebo gpt-4o-mini (levné)
-    Produkce        → claude-sonnet nebo gpt-4o
-    Privacy/offline → Ollama s Llama 3.1
+=== Minimální produkční checklist ===
+
+  ✓ Klíče z env proměnných (NIKDY v kódu!)
+  ✓ Retry s exponential backoff
+  ✓ Cache pro opakující se dotazy
+  ✓ Logging (co jde do API, co přijde zpět)
+  ✓ Timeout (prevent hanging requests)
+  ✓ Sanitizace vstupu (SQL/prompt injection)
 """)
 
 # TVOJE ÚLOHA:
-# 1. Nastav ANTHROPIC_API_KEY a spusť skutečné volání API.
-# 2. Napiš funkci summarize(text, max_vety=3) která shrne libovolný text.
-# 3. Vytvoř chatbota s pamětí – ukládej historii do SQLite (lekce 40).
-# 4. Přidej streaming výstup – model odpovídá token po tokenu.
+# 1. Nastav ANTHROPIC_API_KEY a spusť reálné volání.
+# 2. Napiš funkci sumarizuj(text) která shrne libovolný text na 3 věty.
+# 3. Postav chatbota s pamětí – ukládej historii do SQLite (lekce 40).
+# 4. Přidej streaming do webové aplikace z lekce 56 (FastAPI + Server-Sent Events).
