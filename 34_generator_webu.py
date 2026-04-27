@@ -319,7 +319,7 @@ SEKCE = [
         "rozsah": range(76, 85),
         "nazev":  "Praktické nástroje",
         "ikona":  "🛠️",
-        "popis":  "Playwright, PDF/Excel, email, Pygame – věci které se opravdu hodí",
+        "popis":  "Playwright, PDF/Excel, email, Pygame, OpenCV, NLP, sokety, AWS boto3",
         "barva":  "#58a6ff",
     },
 ]

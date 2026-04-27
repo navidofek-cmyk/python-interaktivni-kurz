@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/navidofek-cmyk/python-interaktivni-kurz/actions/workflows/ci.yml/badge.svg)](https://github.com/navidofek-cmyk/python-interaktivni-kurz/actions/workflows/ci.yml)
 [![Pages](https://github.com/navidofek-cmyk/python-interaktivni-kurz/actions/workflows/pages.yml/badge.svg)](https://navidofek-cmyk.github.io/python-interaktivni-kurz/)
-![Lekce](https://img.shields.io/badge/lekc%C3%AD-71-blue)
+![Lekce](https://img.shields.io/badge/lekc%C3%AD-83-blue)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue?logo=python&logoColor=white)
 ![Licence](https://img.shields.io/badge/licence-MIT-green)
 
@@ -48,6 +48,8 @@ python3 --version
 | 📊 Datová věda | 53–56 | NumPy, Pandas, Matplotlib, FastAPI |
 | 🌐 Distribuované systémy | 57–65 | CPython, SQLAlchemy, Celery, Docker, WebSockets, Redis, GraphQL, Kafka |
 | ⚙️ Produkce & DevOps | 66–71 | gRPC, mikroslužby, security, Kubernetes, MLOps, Git |
+| ✨ Novinky a AI | 72–75 | Python 3.13, uv/Poetry, Claude + OpenAI API, CI/CD |
+| 🛠️ Praktické nástroje | 76–83 | Playwright, PDF/Excel, email, Pygame, OpenCV, NLP, sokety, AWS |
 
 ---
 

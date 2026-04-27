@@ -159,6 +159,28 @@ python3 01_ahoj_svete.py
 | 70 | `70_mlops.py` | MLOps, model registry, serving, drift | ⭐⭐⭐⭐⭐ |
 | 71 | `71_git.py` | Git internals, hooks, rebase, cherry-pick | ⭐⭐⭐⭐ |
 
+## ✨ Novinky a AI (72–75)
+
+| # | Soubor | Co se naučíš | Obtížnost |
+|---|--------|--------------|-----------|
+| 72 | `72_python313.py` | Python 3.13 – JIT, free-threaded mode, REPL | ⭐⭐⭐⭐ |
+| 73 | `73_uv_poetry.py` | uv a Poetry – moderní správa závislostí | ⭐⭐⭐ |
+| 74 | `74_llm_api.py` | Claude + OpenAI API – chat, streaming, tool use | ⭐⭐⭐⭐ |
+| 75 | `75_llm_cicd.py` | **PROJEKT:** LLM v CI/CD – AI code review na PR | ⭐⭐⭐⭐⭐ |
+
+## 🛠️ Praktické nástroje (76–83)
+
+| # | Soubor | Co se naučíš | Obtížnost |
+|---|--------|--------------|-----------|
+| 76 | `76_playwright.py` | Playwright – E2E testy, web scraping, automation | ⭐⭐⭐⭐ |
+| 77 | `77_pdf_excel.py` | PDF (reportlab) a Excel (openpyxl) – faktury, reporty | ⭐⭐⭐⭐ |
+| 78 | `78_email_notifikace.py` | smtplib, imaplib, Slack webhooks | ⭐⭐⭐ |
+| 79 | `79_pygame.py` | **PROJEKT:** Pygame Space Shooter | ⭐⭐⭐⭐ |
+| 80 | `80_opencv.py` | OpenCV – filtry, detekce kontur a tváří | ⭐⭐⭐⭐ |
+| 81 | `81_nlp.py` | NLP – TF-IDF, sentiment, spaCy NER | ⭐⭐⭐⭐ |
+| 82 | `82_sokety.py` | TCP/UDP sokety – chat server, async, binární protokol | ⭐⭐⭐⭐⭐ |
+| 83 | `83_aws_boto3.py` | AWS boto3 – S3, DynamoDB, SQS, Secrets Manager | ⭐⭐⭐⭐⭐ |
+
 ---
 
 ## Jak spustit lekci

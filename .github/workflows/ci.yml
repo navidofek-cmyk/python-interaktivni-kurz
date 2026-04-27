@@ -22,10 +22,20 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: pip install pytest
+        run: pip install pytest pytest-cov
 
-      - name: Run unittest (lekce 39)
-        run: python -m pytest 39_testovani.py -v
+      - name: Run unittest + coverage (lekce 39)
+        run: |
+          python -m pytest 39_testovani.py -v \
+            --cov=. --cov-report=term-missing \
+            --cov-report=xml:coverage.xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: matrix.python-version == '3.12'
+        with:
+          name: coverage-report
+          path: coverage.xml
 
       - name: Syntax check – všechny lekce
         run: |
