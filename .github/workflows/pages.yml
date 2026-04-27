@@ -24,6 +24,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - name: Generuj web
         run: python3 34_generator_webu.py
 

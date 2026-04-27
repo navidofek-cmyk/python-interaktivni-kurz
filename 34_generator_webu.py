@@ -280,11 +280,18 @@ SEKCE = [
         "barva":  "#a5d6ff",
     },
     {
-        "rozsah": range(62, 70),
+        "rozsah": range(62, 67),
         "nazev":  "Distribuované systémy",
         "ikona":  "🌐",
         "popis":  "WebSockets, Redis, GraphQL, Kafka – real-time a škálovatelné architektury",
         "barva":  "#d29922",
+    },
+    {
+        "rozsah": range(66, 71),
+        "nazev":  "Produkce & DevOps",
+        "ikona":  "⚙️",
+        "popis":  "gRPC, mikroslužby, security, Kubernetes, MLOps",
+        "barva":  "#ff7b72",
     },
 ]
 
