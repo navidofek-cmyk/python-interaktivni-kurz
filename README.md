@@ -1,7 +1,27 @@
 # 🐍 Python – Interaktivní kurz
 
-Kurz Pythonu od úplných základů po pokročilé téma.
+Kurz Pythonu od úplných základů po pokročilá témata.
 Každá lekce je jeden `.py` soubor – spustíš ho, přečteš, vyzkouší a splníš úlohy na konci.
+
+**🌐 Živý web:** [navidofek-cmyk.github.io/python-interaktivni-kurz](https://navidofek-cmyk.github.io/python-interaktivni-kurz/)
+
+---
+
+## Jak začít
+
+```bash
+git clone https://github.com/navidofek-cmyk/python-interaktivni-kurz.git
+cd python-interaktivni-kurz
+python3 01_ahoj_svete.py
+```
+
+Potřebuješ Python 3.11+:
+
+```bash
+python3 --version
+```
+
+---
 
 ## Lekce
 
@@ -15,59 +35,94 @@ Každá lekce je jeden `.py` soubor – spustíš ho, přečteš, vyzkouší a s
 | 🏗️ OOP | 22–24 | Třídy, dědičnost, magic methods |
 | ⚙️ Pokročilé vzory | 25–27 | Async, dekorátory, generátory |
 | 📰 Novinky z docs | 28–30 | match/case, dataclasses, ExceptionGroup |
-| 🔩 Internals | 31–34 | __slots__, descriptory, Protocol, metaklasy, generátor webu |
+| 🔩 Internals & nástroje | 31–34 | __slots__, descriptory, Protocol, metaklasy, generátor webu |
 | 🧮 Algoritmy | 35–38 | Rekurze, třídění, grafy BFS/DFS/Dijkstra, DP |
 | 🚀 Profesionální Python | 39–45 | Testování, SQLite, REST API, design patterns, concurrency, výkon, packaging |
-| 🔧 Nástroje | 46–49 | Regex, funkcionální programování, logging, CLI |
+| 🔧 Nástroje a ekosystém | 46–52 | Regex, FP, logging, CLI, scraping, Pydantic, kód kvalita |
+| 📊 Datová věda | 53–56 | NumPy, Pandas, Matplotlib, FastAPI |
+| 🌐 Distribuované systémy | 57–65 | CPython, SQLAlchemy, Celery, Docker, WebSockets, Redis, GraphQL, Kafka |
+| ⚙️ Produkce & DevOps | 66–71 | gRPC, mikroslužby, security, Kubernetes, MLOps, Git |
 
-## Jak začít
+---
 
-```bash
-git clone https://github.com/navidofek-cmyk/python-interaktivni-kurz.git
-cd python-interaktivni-kurz
-python3 01_ahoj_svete.py
+## Jak funguje živý web
+
+Tento repozitář neobsahuje hotové HTML soubory.
+Web se **generuje z lekcí** pokaždé znovu – automaticky.
+
+```
+.py soubory (lekce)
+      │
+      │  python3 34_generator_webu.py
+      ↓
+  web/index.html + web/lekce/*.html
+      │
+      │  GitHub Actions (automaticky po každém git push)
+      ↓
+  https://navidofek-cmyk.github.io/python-interaktivni-kurz/
 ```
 
-Potřebuješ Python 3.11+. Ověř verzi:
+### Přidat lekci → web se aktualizuje sám
 
 ```bash
-python3 --version
+# 1. Napiš lekci
+nano 72_nova_lekce.py
+
+# 2. Commitni a pushni
+git add 72_nova_lekce.py
+git commit -m "feat: lekce 72"
+git push
+
+# Za ~1 minutu je nová lekce živá na webu.
 ```
 
-## Generátor webu
+GitHub Actions workflow (`.github/workflows/pages.yml`) se spustí automaticky,
+spustí generátor a nasadí výsledek na GitHub Pages.
 
-Kurz má vlastní statický web vygenerovaný Pythonem (lekce 34):
+### Lokální náhled
 
 ```bash
 python3 34_generator_webu.py
-# Otevři web/index.html
+# Otevři web/index.html dvojklikem – bez serveru funguje
 ```
 
-Web je také nasazený na [GitHub Pages](https://navidofek-cmyk.github.io/python-interaktivni-kurz/).
+---
 
-## Struktura
+## Struktura repozitáře
 
 ```
 .
-├── 01_ahoj_svete.py        # Každá lekce = samostatný soubor
+├── 01_ahoj_svete.py          # lekce (každá = samostatný soubor)
 ├── ...
-├── 45_packaging.py
-├── 34_generator_webu.py    # Generuje web/ ze všech lekcí
-├── POSTUP.md               # Přehled všech lekcí s obtížností
-└── web/                    # Vygenerovaný web (není v gitu)
+├── 71_git.py
+├── 34_generator_webu.py      # čte .py soubory → generuje HTML
+├── POSTUP.md                 # přehled lekcí s obtížností
+├── CHANGELOG.md              # historie změn
+├── JAK_FUNGUJE_WEB.md        # detailnější popis pipeline
+└── .github/
+    └── workflows/
+        ├── ci.yml            # syntax check + testy při každém push
+        └── pages.yml         # generuj web + nasaď na GitHub Pages
 ```
 
-## Testování
+`web/` se negeneruje do gitu – vzniká za běhu.
 
-Lekce 39 obsahuje testy (unittest). Spusť je:
+---
+
+## Testy
 
 ```bash
 python3 -m pytest 39_testovani.py -v
 ```
 
+CI (`.github/workflows/ci.yml`) spouští testy automaticky při každém push.
+
+---
+
 ## Přispívání
 
-Našel jsi chybu nebo máš nápad na lekci? Otevři [Issue](https://github.com/navidofek-cmyk/python-interaktivni-kurz/issues).
+Našel jsi chybu nebo máš nápad na lekci?
+Otevři [Issue](https://github.com/navidofek-cmyk/python-interaktivni-kurz/issues).
 
 ---
 
