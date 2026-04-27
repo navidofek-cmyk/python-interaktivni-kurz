@@ -17,6 +17,7 @@ Spusť a pak otevři web/index.html v prohlížeči.
 
 import ast
 import html
+import json
 import re
 import textwrap
 import unicodedata
@@ -178,6 +179,20 @@ pre.kod { background: var(--code-bg); border: 1px solid var(--border);
 nav.zpet { margin-bottom: 1.5rem; }
 footer { text-align: center; color: var(--muted); font-size: .8rem;
          padding: 2rem; border-top: 1px solid var(--border); margin-top: 3rem; }
+
+/* Světlé téma */
+html.light {
+  --bg: #ffffff; --surface: #f6f8fa; --border: #d0d7de;
+  --text: #1f2328; --muted: #636c76; --accent: #0969da;
+  --green: #1a7f37; --yellow: #9a6700; --red: #d1242f;
+  --code-bg: #f6f8fa;
+}
+html.light .kw  { color: #cf222e; }
+html.light .st  { color: #0a3069; }
+html.light .cm  { color: #6e7781; }
+html.light .fn  { color: #6639ba; }
+html.light .nb  { color: #0550ae; }
+html.light .nm  { color: #953800; }
 """
 
 SEKCE = [
@@ -293,6 +308,13 @@ SEKCE = [
         "popis":  "gRPC, mikroslužby, security, Kubernetes, MLOps, Git",
         "barva":  "#ff7b72",
     },
+    {
+        "rozsah": range(72, 80),
+        "nazev":  "Novinky a AI",
+        "ikona":  "✨",
+        "popis":  "Python 3.13, uv/Poetry, LLM API – Claude a OpenAI z Pythonu",
+        "barva":  "#d2a8ff",
+    },
 ]
 
 def sekce_pro(cislo: int) -> str:
@@ -379,7 +401,7 @@ def generuj_index(lekce: list[dict], vystup: Path) -> None:
 
         karty = ""
         for l in skupina:
-            karty += f"""    <a class="card" href="lekce/{l['slug']}.html">
+            karty += f"""    <a class="card" href="lekce/{l['slug']}.html" data-slug="{l['slug']}">
       <div class="num">Lekce {l['cislo']:02d}</div>
       <div class="card-title">{html.escape(l['titul'])}</div>
       <div class="stars">{l['obtiznost']}</div>
@@ -399,26 +421,140 @@ def generuj_index(lekce: list[dict], vystup: Path) -> None:
 </div>
 """
 
+    # Vygeneruj JSON index pro vyhledávání
+    search_data = json.dumps([
+        {"cislo": l["cislo"], "titul": l["titul"],
+         "slug": l["slug"], "sekce": sekce_pro(l["cislo"])}
+        for l in lekce
+    ], ensure_ascii=False)
+
     stranky = f"""<!DOCTYPE html>
 <html lang="cs">
 <head>
   <meta charset="utf-8">
   <title>Python kurz – interaktivní lekce</title>
-  <style>{CSS}</style>
+  <style>{CSS}
+/* Vyhledávání */
+.search-wrap {{ position:relative; margin:1.2rem 0; }}
+#hledej {{ width:100%; padding:.65rem 1rem .65rem 2.5rem; background:var(--surface);
+           border:1px solid var(--border); border-radius:8px; color:var(--text);
+           font-size:1rem; outline:none; }}
+#hledej:focus {{ border-color:var(--accent); }}
+.search-icon {{ position:absolute; left:.8rem; top:50%; transform:translateY(-50%);
+                color:var(--muted); pointer-events:none; }}
+#vysledky {{ position:absolute; width:100%; background:var(--surface);
+             border:1px solid var(--border); border-radius:8px; z-index:99;
+             max-height:320px; overflow-y:auto; top:calc(100% + 4px); }}
+#vysledky a {{ display:block; padding:.5rem 1rem; color:var(--text); border-bottom:1px solid var(--border); }}
+#vysledky a:last-child {{ border-bottom:none; }}
+#vysledky a:hover {{ background:var(--code-bg); text-decoration:none; }}
+#vysledky .hit-sekce {{ font-size:.75rem; color:var(--muted); }}
+#vysledky:empty {{ display:none; }}
+/* Theme toggle */
+.theme-btn {{ background:none; border:1px solid var(--border); color:var(--text);
+              padding:.3rem .7rem; border-radius:6px; cursor:pointer; font-size:.85rem; }}
+.theme-btn:hover {{ border-color:var(--accent); }}
+/* Progress */
+.card.hotovo {{ border-color:var(--green); opacity:.7; }}
+.card.hotovo::after {{ content:"✓"; position:absolute; top:.5rem; right:.7rem;
+                       color:var(--green); font-weight:700; }}
+.card {{ position:relative; }}
+.progress-bar {{ height:4px; background:var(--border); border-radius:2px; margin:.5rem 0 1rem; }}
+.progress-fill {{ height:100%; background:var(--green); border-radius:2px;
+                  transition:width .4s; }}
+  </style>
 </head>
 <body>
 <header>
   <h1>🐍 Python kurz</h1>
-  <span class="badge">{len(lekce)} lekcí</span>
+  <div style="display:flex;gap:.7rem;align-items:center;margin-left:auto">
+    <span class="badge">{len(lekce)} lekcí</span>
+    <button class="theme-btn" onclick="toggleTheme()" title="Přepnout téma">☀️</button>
+  </div>
 </header>
 <main>
   <p style="color:var(--muted);margin-top:1rem">
     Interaktivní kurz Pythonu – od <code>print("Ahoj")</code>
     po metaklasy, async a generátory webu.
   </p>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input id="hledej" type="search" placeholder="Hledej lekci… (např. async, regex, sort)" autocomplete="off">
+    <div id="vysledky"></div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div id="progress-text" style="font-size:.8rem;color:var(--muted);margin-bottom:1rem"></div>
   {bloky}
 </main>
 <footer>Vygenerováno Pythonem · lekce 34</footer>
+<script>
+const LEKCE = {search_data};
+const hledej = document.getElementById("hledej");
+const vysledky = document.getElementById("vysledky");
+
+hledej.addEventListener("input", () => {{
+  const q = hledej.value.trim().toLowerCase();
+  vysledky.innerHTML = "";
+  if (q.length < 2) return;
+  const shody = LEKCE.filter(l =>
+    l.titul.toLowerCase().includes(q) || l.sekce.toLowerCase().includes(q)
+  ).slice(0, 8);
+  shody.forEach(l => {{
+    const a = document.createElement("a");
+    a.href = "lekce/" + l.slug + ".html";
+    a.innerHTML = `<strong>Lekce ${{String(l.cislo).padStart(2,"0")}}: ${{l.titul}}</strong>
+      <div class="hit-sekce">${{l.sekce}}</div>`;
+    vysledky.appendChild(a);
+  }});
+}});
+
+document.addEventListener("click", e => {{
+  if (!hledej.contains(e.target)) vysledky.innerHTML = "";
+}});
+
+// Progress tracker
+const HOTOVO_KEY = "kurz_hotovo";
+function getHotovo() {{ return JSON.parse(localStorage.getItem(HOTOVO_KEY) || "[]"); }}
+function setHotovo(list) {{ localStorage.setItem(HOTOVO_KEY, JSON.stringify(list)); }}
+
+function updateProgress() {{
+  const hotovo = getHotovo();
+  const total = {len(lekce)};
+  const pct = Math.round(hotovo.length / total * 100);
+  document.getElementById("progress-fill").style.width = pct + "%";
+  document.getElementById("progress-text").textContent =
+    hotovo.length > 0 ? `Dokončeno ${{hotovo.length}} z ${{total}} lekcí (${{pct}}%)` : "";
+  document.querySelectorAll(".card[data-slug]").forEach(card => {{
+    card.classList.toggle("hotovo", hotovo.includes(card.dataset.slug));
+  }});
+}}
+
+document.querySelectorAll(".card[data-slug]").forEach(card => {{
+  card.addEventListener("dblclick", e => {{
+    e.preventDefault();
+    const slug = card.dataset.slug;
+    const hotovo = getHotovo();
+    const idx = hotovo.indexOf(slug);
+    if (idx === -1) hotovo.push(slug); else hotovo.splice(idx, 1);
+    setHotovo(hotovo);
+    updateProgress();
+  }});
+}});
+updateProgress();
+
+// Theme toggle
+function toggleTheme() {{
+  const root = document.documentElement;
+  const isLight = root.classList.toggle("light");
+  localStorage.setItem("theme", isLight ? "light" : "dark");
+  document.querySelector(".theme-btn").textContent = isLight ? "🌙" : "☀️";
+}}
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme === "light") {{
+  document.documentElement.classList.add("light");
+  document.querySelector(".theme-btn").textContent = "🌙";
+}}
+</script>
 </body>
 </html>"""
 
@@ -465,12 +601,22 @@ def generuj_lekci(l: dict, vystup: Path, prev_l=None, next_l=None) -> None:
 .nav-btn {{ background:var(--surface); border:1px solid var(--border);
             padding:.5rem 1rem; border-radius:6px; font-size:.9rem; }}
 .nav-btn:hover {{ border-color:var(--accent); text-decoration:none; }}
+.kod-wrap {{ position:relative; }}
+.copy-btn {{ position:absolute; top:.6rem; right:.6rem; background:var(--border);
+             border:none; color:var(--text); padding:.3rem .7rem; border-radius:5px;
+             cursor:pointer; font-size:.8rem; opacity:.7; }}
+.copy-btn:hover {{ opacity:1; }}
+.theme-btn {{ background:none; border:1px solid var(--border); color:var(--text);
+              padding:.3rem .7rem; border-radius:6px; cursor:pointer; font-size:.85rem; }}
   </style>
 </head>
 <body>
 <header>
-  <h1>🐍 Python kurz</h1>
-  <a href="../index.html">← Přehled</a>
+  <h1><a href="../index.html" style="color:inherit;text-decoration:none">🐍 Python kurz</a></h1>
+  <div style="display:flex;gap:.7rem;align-items:center;margin-left:auto">
+    <a href="../index.html" style="font-size:.9rem">← Přehled</a>
+    <button class="theme-btn" onclick="toggleTheme()" title="Přepnout téma">☀️</button>
+  </div>
 </header>
 <main>
   <div class="lekce-header">
@@ -481,11 +627,33 @@ def generuj_lekci(l: dict, vystup: Path, prev_l=None, next_l=None) -> None:
     </div>
   </div>
   {'<div class="docstring">' + doc_html + '</div>' if doc_html else ''}
-  <pre class="kod"><code>{zvyrazni_python(kod_bez_uloh)}</code></pre>
+  <div class="kod-wrap">
+    <button class="copy-btn" onclick="kopiruj(this)">Kopírovat</button>
+    <pre class="kod"><code id="kod-{l['cislo']}">{zvyrazni_python(kod_bez_uloh)}</code></pre>
+  </div>
   {ulohy_html}
   <div class="page-nav">{prev_html}{next_html}</div>
 </main>
 <footer>Vygenerováno Pythonem · lekce 34</footer>
+<script>
+function kopiruj(btn) {{
+  const kod = btn.nextElementSibling.textContent;
+  navigator.clipboard.writeText(kod).then(() => {{
+    btn.textContent = "Zkopírováno ✓";
+    setTimeout(() => btn.textContent = "Kopírovat", 2000);
+  }});
+}}
+function toggleTheme() {{
+  const isLight = document.documentElement.classList.toggle("light");
+  localStorage.setItem("theme", isLight ? "light" : "dark");
+  document.querySelector(".theme-btn").textContent = isLight ? "🌙" : "☀️";
+}}
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme === "light") {{
+  document.documentElement.classList.add("light");
+  document.querySelector(".theme-btn").textContent = "🌙";
+}}
+</script>
 </body>
 </html>"""
 

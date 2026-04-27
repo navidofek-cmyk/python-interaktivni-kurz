@@ -1,0 +1,37 @@
+name: Návrh nové lekce
+description: Navrhni téma pro novou lekci
+labels: ["enhancement"]
+body:
+  - type: input
+    id: tema
+    attributes:
+      label: Téma lekce
+      placeholder: "např. asyncio streams, PyO3, Textový AI..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proc
+    attributes:
+      label: Proč by tato lekce byla užitečná?
+      placeholder: "Co by se čtenář naučil, kde to použije..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: obtiznost
+    attributes:
+      label: Odhadovaná obtížnost
+      options:
+        - "⭐ Základní"
+        - "⭐⭐ Střední"
+        - "⭐⭐⭐ Pokročilá"
+        - "⭐⭐⭐⭐⭐ Expert"
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Kontrola
+      options:
+        - label: Téma ještě v kurzu není (zkontroloval/a jsem POSTUP.md)
+          required: true
