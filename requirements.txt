@@ -18,7 +18,7 @@
 # ── Lekce 51: Pydantic ───────────────────────────────────────
 pydantic>=2.5
 pydantic-settings>=2.1
-python-dotenv>=1.0
+python-dotenv>=1.2.2
 
 # ── Lekce 52: Kód kvalita ────────────────────────────────────
 black>=23.0
