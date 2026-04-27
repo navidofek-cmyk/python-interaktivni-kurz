@@ -287,10 +287,10 @@ SEKCE = [
         "barva":  "#d29922",
     },
     {
-        "rozsah": range(66, 71),
+        "rozsah": range(66, 72),
         "nazev":  "Produkce & DevOps",
         "ikona":  "⚙️",
-        "popis":  "gRPC, mikroslužby, security, Kubernetes, MLOps",
+        "popis":  "gRPC, mikroslužby, security, Kubernetes, MLOps, Git",
         "barva":  "#ff7b72",
     },
 ]
