@@ -41,7 +41,7 @@ uvicorn>=0.24
 httpx>=0.25          # pro TestClient
 
 # ── Lekce 58: SQLAlchemy ─────────────────────────────────────
-sqlalchemy>=2.0
+sqlalchemy>=2.0.49
 
 # ── Lekce 59: Celery ─────────────────────────────────────────
 # celery>=5.3
