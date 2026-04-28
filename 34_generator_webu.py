@@ -63,9 +63,11 @@ def nacti_lekci(cesta: Path) -> dict:
     except SyntaxError:
         docstring = ""
 
-    # Titul = první řádek docstringu
+    # Titul = první řádek docstringu, bez prefixu "LEKCE X: "
     radky = docstring.splitlines()
-    titul = radky[0].strip() if radky else cesta.stem
+    raw_titul = radky[0].strip() if radky else cesta.stem
+    # Odstraň "LEKCE 4: " prefix aby se v nadpisu stránky neobjevil dvakrát
+    titul = re.sub(r"^LEKCE\s+\d+[A-Z]?:\s*", "", raw_titul).strip() or raw_titul
 
     # Obtížnost ze třetího řádku (===...)
     obtiznost = ""
@@ -176,11 +178,10 @@ pre.kod { background: var(--code-bg); border: 1px solid var(--border);
 .ulohy h3 { margin-bottom: .6rem; color: var(--green); }
 .ulohy li { margin-left: 1.2rem; margin-bottom: .3rem; }
 .reseni-wrap { margin-top: 1rem; border-top: 1px solid var(--border); padding-top: .8rem; }
-.reseni-btn { cursor:pointer; color:var(--accent); font-size:.95rem;
-              font-weight:600; list-style:none; user-select:none; }
-.reseni-btn::-webkit-details-marker { display:none; }
-.reseni-btn::before { content:"▶ "; font-size:.7rem; }
-details[open] .reseni-btn::before { content:"▼ "; }
+.reseni-btn { background:none; border:1px solid var(--accent); color:var(--accent);
+              font-size:.9rem; font-weight:600; padding:.4rem 1rem; border-radius:6px;
+              cursor:pointer; }
+.reseni-btn:hover { background:var(--accent); color:#000; }
 .reseni-obsah { animation: fadeIn .2s ease; }
 @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); }
                      to   { opacity:1; transform:translateY(0); } }
@@ -597,13 +598,19 @@ def odstran_ulohy_z_kodu(kod: str) -> str:
             vysledek.append(radek)
     return "\n".join(vysledek).rstrip()
 
-def generuj_lekci(l: dict, vystup: Path, prev_l=None, next_l=None) -> None:
-    doc_html = html.escape(
-        textwrap.dedent(l["docstring"]).strip()
-    ) if l["docstring"] else ""
+def generuj_lekci(l: dict, vystup: Path, prev_l=None, next_l=None,
+                   projekt_root: Path | None = None) -> None:
+    # Docstring: přeskoč první 2 řádky (titul + podtržítka ===)
+    doc_radky = l["docstring"].splitlines() if l["docstring"] else []
+    doc_bez_titulku = "\n".join(
+        r for r in doc_radky[2:]          # přeskoč "LEKCE X: ..." a "======..."
+        if not re.match(r"^=+$", r.strip())
+    ).strip()
+    doc_html = html.escape(textwrap.dedent(doc_bez_titulku)) if doc_bez_titulku else ""
 
-    # Zkontroluj jestli existuje soubor s řešením
-    reseni_cesta = vystup.parent.parent / "reseni" / f"{l['slug']}.py"
+    # Zkontroluj jestli existuje soubor s řešením – hledej v kořeni projektu
+    root = projekt_root or vystup.parent.parent.parent
+    reseni_cesta = root / "reseni" / f"{l['slug']}.py"
     ma_reseni    = reseni_cesta.exists()
 
     ulohy_html = ""
@@ -611,17 +618,17 @@ def generuj_lekci(l: dict, vystup: Path, prev_l=None, next_l=None) -> None:
         items = "\n".join(f"<li>{html.escape(u)}</li>" for u in l["ulohy"])
         reseni_btn = ""
         if ma_reseni:
-            reseni_kod = html.escape(reseni_cesta.read_text(encoding="utf-8"))
+            rid = f"reseni-{l['cislo']}"
             reseni_btn = f"""
-<details class="reseni-wrap">
-  <summary class="reseni-btn">💡 Zobrazit řešení</summary>
-  <div class="reseni-obsah">
+<div class="reseni-wrap">
+  <button class="reseni-btn" onclick="toggleReseni('{rid}')">💡 Zobrazit řešení</button>
+  <div id="{rid}" class="reseni-obsah" style="display:none">
     <div class="kod-wrap" style="margin-top:.8rem">
       <button class="copy-btn" onclick="kopiruj(this)">Kopírovat</button>
       <pre class="kod"><code>{zvyrazni_python(reseni_cesta.read_text(encoding="utf-8"))}</code></pre>
     </div>
   </div>
-</details>"""
+</div>"""
         ulohy_html = (f'<div class="ulohy"><h3>Tvoje úlohy</h3><ul>{items}</ul>'
                       f'{reseni_btn}</div>')
 
@@ -684,6 +691,13 @@ function kopiruj(btn) {{
     setTimeout(() => btn.textContent = "Kopírovat", 2000);
   }});
 }}
+function toggleReseni(id) {{
+  const el  = document.getElementById(id);
+  const btn = el.previousElementSibling;
+  const skryty = el.style.display === "none";
+  el.style.display = skryty ? "block" : "none";
+  btn.textContent  = skryty ? "🙈 Skrýt řešení" : "💡 Zobrazit řešení";
+}}
 function toggleTheme() {{
   const isLight = document.documentElement.classList.toggle("light");
   localStorage.setItem("theme", isLight ? "light" : "dark");
@@ -732,7 +746,7 @@ def sestav_web():
         cil = lekce_dir / f"{l['slug']}.html"
         prev_l = lekce[i - 1] if i > 0 else None
         next_l = lekce[i + 1] if i < len(lekce) - 1 else None
-        generuj_lekci(l, cil, prev_l, next_l)
+        generuj_lekci(l, cil, prev_l, next_l, projekt_root=zde)
         print(f"  ✓ web/lekce/{l['slug']}.html")
 
     print(f"\nHotovo! Otevři:")
