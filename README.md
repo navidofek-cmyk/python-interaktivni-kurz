@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/navidofek-cmyk/python-interaktivni-kurz/actions/workflows/ci.yml/badge.svg)](https://github.com/navidofek-cmyk/python-interaktivni-kurz/actions/workflows/ci.yml)
 [![Pages](https://github.com/navidofek-cmyk/python-interaktivni-kurz/actions/workflows/pages.yml/badge.svg)](https://navidofek-cmyk.github.io/python-interaktivni-kurz/)
-![Lekce](https://img.shields.io/badge/lekc%C3%AD-94-blue)
+![Lekce](https://img.shields.io/badge/lekc%C3%AD-108-blue)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue?logo=python&logoColor=white)
 ![Licence](https://img.shields.io/badge/licence-MIT-green)
 
@@ -50,6 +50,9 @@ python3 --version
 | ⚙️ Produkce & DevOps | 66–71 | gRPC, mikroslužby, security, Kubernetes, MLOps, Git |
 | ✨ Novinky a AI | 72–75 | Python 3.13, uv/Poetry, Claude + OpenAI API, CI/CD |
 | 🛠️ Praktické nástroje | 76–83 | Playwright, PDF/Excel, email, Pygame, OpenCV, NLP, sokety, AWS |
+| 🌟 Ekosystém & specializace | 84–94 | Rich, Audio, tkinter, Hypothesis, PyTorch, Jinja2, OpenTelemetry, Scrapy, Alembic, Whisper, Clean Architecture |
+| 📚 Stdlib & nástroje | 95–101 | tomllib, heapq/bisect, difflib, zoneinfo, mmap/shelve, curses, cmd |
+| 🤖 AI & LLM | 102–108 | Prompt engineering, RAG, AI agenti, MCP server, Claude Skills, LLM evaluace, LangChain/Llama |
 
 ---
 
@@ -102,7 +105,7 @@ python3 34_generator_webu.py
 .
 ├── 01_ahoj_svete.py          # lekce (každá = samostatný soubor)
 ├── ...
-├── 71_git.py
+├── 108_langchain_llama.py
 ├── 34_generator_webu.py      # čte .py soubory → generuje HTML
 ├── POSTUP.md                 # přehled lekcí s obtížností
 ├── CHANGELOG.md              # historie změn

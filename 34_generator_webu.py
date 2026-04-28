@@ -37,7 +37,7 @@ print(f"Přípona:         {Path(__file__).suffix}")
 print(f"Stem:            {Path(__file__).stem}")
 
 # Glob – najdi všechny .py soubory odpovídající vzoru
-lekce_soubory = sorted(zde.glob("[0-9][0-9]_*.py"))
+lekce_soubory = sorted(zde.glob("[0-9]*_*.py"))
 print(f"\nNalezeno {len(lekce_soubory)} lekcí:")
 for s in lekce_soubory[:5]:
     print(f"  {s.name}")
@@ -336,8 +336,22 @@ SEKCE = [
         "rozsah": range(84, 95),
         "nazev":  "Ekosystém a specializace",
         "ikona":  "🌟",
-        "popis":  "Rich TUI, Audio, tkinter GUI, Hypothesis, PyTorch, Jinja2, OpenTelemetry",
+        "popis":  "Rich TUI, Audio, tkinter GUI, Hypothesis, PyTorch, Jinja2, OpenTelemetry, Scrapy, Alembic, Whisper, Clean Arch",
         "barva":  "#d29922",
+    },
+    {
+        "rozsah": range(95, 102),
+        "nazev":  "Stdlib do hloubky",
+        "ikona":  "📚",
+        "popis":  "tomllib, heapq/bisect, difflib, zoneinfo, mmap/shelve, curses, cmd",
+        "barva":  "#3fb950",
+    },
+    {
+        "rozsah": range(102, 112),
+        "nazev":  "AI a LLM",
+        "ikona":  "🤖",
+        "popis":  "Prompt engineering, RAG, autonomní agenti, MCP server, SKILL.md, evaluace, LangChain",
+        "barva":  "#58a6ff",
     },
 ]
 
@@ -727,7 +741,7 @@ def sestav_web():
     lekce_dir.mkdir(parents=True, exist_ok=True)
 
     # Načti všechny lekce
-    soubory = sorted(zde.glob("[0-9][0-9]_*.py"))
+    soubory = sorted(zde.glob("[0-9]*_*.py"))
     lekce   = [nacti_lekci(s) for s in soubory]
     print(f"Načteno {len(lekce)} lekcí.")
 
