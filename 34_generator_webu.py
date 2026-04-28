@@ -175,6 +175,15 @@ pre.kod { background: var(--code-bg); border: 1px solid var(--border);
          border-radius: 8px; padding: 1rem 1.2rem; margin-top: 1.5rem; }
 .ulohy h3 { margin-bottom: .6rem; color: var(--green); }
 .ulohy li { margin-left: 1.2rem; margin-bottom: .3rem; }
+.reseni-wrap { margin-top: 1rem; border-top: 1px solid var(--border); padding-top: .8rem; }
+.reseni-btn { cursor:pointer; color:var(--accent); font-size:.95rem;
+              font-weight:600; list-style:none; user-select:none; }
+.reseni-btn::-webkit-details-marker { display:none; }
+.reseni-btn::before { content:"▶ "; font-size:.7rem; }
+details[open] .reseni-btn::before { content:"▼ "; }
+.reseni-obsah { animation: fadeIn .2s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(-4px); }
+                     to   { opacity:1; transform:translateY(0); } }
 
 nav.zpet { margin-bottom: 1.5rem; }
 footer { text-align: center; color: var(--muted); font-size: .8rem;
@@ -593,10 +602,28 @@ def generuj_lekci(l: dict, vystup: Path, prev_l=None, next_l=None) -> None:
         textwrap.dedent(l["docstring"]).strip()
     ) if l["docstring"] else ""
 
+    # Zkontroluj jestli existuje soubor s řešením
+    reseni_cesta = vystup.parent.parent / "reseni" / f"{l['slug']}.py"
+    ma_reseni    = reseni_cesta.exists()
+
     ulohy_html = ""
     if l["ulohy"]:
         items = "\n".join(f"<li>{html.escape(u)}</li>" for u in l["ulohy"])
-        ulohy_html = f'<div class="ulohy"><h3>Tvoje úlohy</h3><ul>{items}</ul></div>'
+        reseni_btn = ""
+        if ma_reseni:
+            reseni_kod = html.escape(reseni_cesta.read_text(encoding="utf-8"))
+            reseni_btn = f"""
+<details class="reseni-wrap">
+  <summary class="reseni-btn">💡 Zobrazit řešení</summary>
+  <div class="reseni-obsah">
+    <div class="kod-wrap" style="margin-top:.8rem">
+      <button class="copy-btn" onclick="kopiruj(this)">Kopírovat</button>
+      <pre class="kod"><code>{zvyrazni_python(reseni_cesta.read_text(encoding="utf-8"))}</code></pre>
+    </div>
+  </div>
+</details>"""
+        ulohy_html = (f'<div class="ulohy"><h3>Tvoje úlohy</h3><ul>{items}</ul>'
+                      f'{reseni_btn}</div>')
 
     kod_bez_uloh = odstran_ulohy_z_kodu(l["kod"])
 
