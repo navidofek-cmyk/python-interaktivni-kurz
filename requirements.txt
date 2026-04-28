@@ -22,7 +22,7 @@ python-dotenv>=1.0
 
 # ── Lekce 52: Kód kvalita ────────────────────────────────────
 black>=23.0
-ruff>=0.1
+ruff>=0.15.12
 mypy>=1.5
 pre-commit>=3.0
 
