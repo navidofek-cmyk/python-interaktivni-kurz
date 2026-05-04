@@ -77,4 +77,4 @@ scipy>=1.11
 
 # ── Testování (lekce 39) ─────────────────────────────────────
 pytest>=7.4
-pytest-cov>=4.1
+pytest-cov>=7.1.0
