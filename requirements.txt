@@ -36,7 +36,7 @@ pandas>=3.0.2
 matplotlib>=3.8
 
 # ── Lekce 56: FastAPI ────────────────────────────────────────
-fastapi>=0.104
+fastapi>=0.136.1
 uvicorn>=0.24
 httpx>=0.28.1          # pro TestClient
 
