@@ -48,7 +48,7 @@ sqlalchemy>=2.0.49
 # redis>=5.0           # broker
 
 # ── Lekce 62: WebSockets ─────────────────────────────────────
-websockets>=12.0
+websockets>=16.0
 
 # ── Lekce 63: Redis ──────────────────────────────────────────
 # redis>=5.0           # vyžaduje běžící Redis server
